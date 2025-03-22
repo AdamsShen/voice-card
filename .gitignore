@@ -39,3 +39,11 @@ node_modules
 *.tmp
 *.tmp.*
 *.tmp_*
+
+# 构建目录和大文件
+*.pkg
+*.exe
+*.app
+*.dmg
+build/
+dist/
