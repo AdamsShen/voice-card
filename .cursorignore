@@ -1,0 +1,53 @@
+# Add directories or file patterns to ignore during indexing (e.g. foo/ or *.csv)
+# large files
+*.mp4
+*.mp3
+*.wav
+*.avi
+*.mkv
+*.flv
+*.mov
+*.wmv
+*.zip
+*.rar
+*.7z
+*.tar
+*.gz
+*.bz2
+*.deb
+
+# temporary files
+*.tmp
+*.tmp.*
+*.tmp_*
+*.tmp_*.*
+*.tmp_*_*
+*.tmp_*_*.*
+*.temp
+*.temp.*
+*.temp_*
+*.temp_*.*
+*.temp_*_*
+*.temp_*_*.*
+
+# test files
+*.test
+*.test.*
+*.test_*
+*.test_*.*
+*.test_*_*
+*.test_*_*.*
+*.spec
+*.spec.*
+*.spec_*
+*.spec_*.*
+*.spec_*_*
+*.spec_*_*.*
+
+# generated files
+*.generated
+*.generated.*
+*.generated_*
+*.generated_*.*
+*.generated_*_*
+*.generated_*_*.*

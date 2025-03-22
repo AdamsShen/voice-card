@@ -1,0 +1,120 @@
+{
+  "name": "voice-card",
+  "version": "1.0.0",
+  "description": "声音鉴定软件",
+  "main": "src/main/main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "cross-env NODE_ENV=development webpack && cross-env NODE_ENV=development electron .",
+    "dev:watch": "concurrently \"cross-env NODE_ENV=development webpack --watch\" \"cross-env NODE_ENV=development electron .\"",
+    "build:webpack": "cross-env NODE_ENV=production webpack",
+    "watch": "webpack --watch",
+    "build:simple-analyzer": "pyinstaller --clean simple_voice_analyzer.spec",
+    "build": "cross-env NODE_ENV=production && npm run build:simple-analyzer && webpack && electron-builder",
+    "build:mac": "cross-env NODE_ENV=production && npm run build:simple-analyzer && webpack && electron-builder --mac",
+    "build:win": "cross-env NODE_ENV=production && npm run build:simple-analyzer && webpack && electron-builder --win --x64"
+  },
+  "keywords": [
+    "voice",
+    "analysis",
+    "electron",
+    "react"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@emotion/react": "^11.11.0",
+    "@emotion/styled": "^11.11.0",
+    "crypto-js": "^4.2.0",
+    "electron-store": "^8.1.0",
+    "html2canvas": "^1.4.1",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-router-dom": "^6.11.2",
+    "wavesurfer.js": "^6.6.3"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.23.9",
+    "@babel/preset-env": "^7.23.9",
+    "@babel/preset-react": "^7.23.3",
+    "audio-format": "^2.3.2",
+    "babel-loader": "^9.1.3",
+    "concurrently": "^9.1.2",
+    "cross-env": "^7.0.3",
+    "electron": "^25.0.0",
+    "electron-builder": "^23.6.0",
+    "icon-gen": "^5.0.0",
+    "pyinstaller": "^0.0.1",
+    "webpack": "^5.90.3",
+    "webpack-cli": "^5.1.4"
+  },
+  "build": {
+    "appId": "com.yourcompany.voicecard",
+    "productName": "Voice Card",
+    "copyright": "Copyright © 2023 Your Company",
+    "directories": {
+      "buildResources": "build",
+      "output": "dist"
+    },
+    "files": [
+      "build/**/*",
+      "node_modules/**/*",
+      "src/**/*",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "dist/voice_analyzer.exe",
+        "to": "bin/voice_analyzer.exe"
+      },
+      {
+        "from": "dist/simple_voice_analyzer.exe",
+        "to": "bin/simple_voice_analyzer.exe"
+      }
+    ],
+    "win": {
+      "icon": "build/icon.ico",
+      "target": [
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "portable": {
+      "artifactName": "VoiceCard-Portable-${version}.exe"
+    },
+    "mac": {
+      "icon": "build/icon.icns",
+      "category": "public.app-category.utilities"
+    },
+    "linux": {
+      "icon": "build/icon.png",
+      "category": "Audio",
+      "target": [
+        "AppImage",
+        "deb"
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Voice Card",
+      "perMachine": false,
+      "installerIcon": "build/icon.ico",
+      "uninstallerIcon": "build/icon.ico",
+      "installerHeaderIcon": "build/icon.ico",
+      "artifactName": "${productName}-Setup-${version}.${ext}"
+    }
+  }
+}
