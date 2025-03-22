@@ -29,7 +29,6 @@ logs
 .vscode/
 .idea/
 tmp/
-temp/ 
 node_modules
 
 # 虚拟环境
@@ -39,16 +38,3 @@ node_modules
 *.tmp
 *.tmp.*
 *.tmp_*
-
-# 构建目录和大文件
-*.pkg
-*.exe
-*.app
-*.dmg
-build/
-dist/
-
-# 虚拟环境和大型库文件
-.venv/
-ffmpeg/
-*.dylib
