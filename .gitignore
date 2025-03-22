@@ -47,3 +47,8 @@ node_modules
 *.dmg
 build/
 dist/
+
+# 虚拟环境和大型库文件
+.venv/
+ffmpeg/
+*.dylib
