@@ -218,7 +218,7 @@ const LoginPage = () => {
   return (
     <Container>
       <LoginBox>
-        <Title>小浪声鉴卡</Title>
+        <Title>ONE声音鉴定(独家版权)</Title>
         <Subtitle>欢迎使用，请先输入登录卡密</Subtitle>
         
         <InputContainer>

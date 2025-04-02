@@ -590,7 +590,7 @@ const CardMakerPage = () => {
       
       <Content>
         <CardContainer>
-          <CardTitle>小浪声鉴卡</CardTitle>
+          <CardTitle>ONE声音鉴定(独家版权)</CardTitle>
           
           {analysisResult ? (
             <>

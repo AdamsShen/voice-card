@@ -1241,7 +1241,7 @@ const RecordPage = () => {
       
       <Content>
         <RecordingContainer>
-          <RecordingTitle>小浪声鉴卡</RecordingTitle>
+          <RecordingTitle>ONE声音鉴定(独家版权)</RecordingTitle>
           
           <NoticeBox>
             {renderNoticeText()}

@@ -51,7 +51,7 @@ function createWindow() {
       enableRemoteModule: true,
       devTools: true
     },
-    title: '声音鉴定卡',
+    title: 'ONE声音鉴定(独家版权)',
     autoHideMenuBar: true,
     menuBarVisible: false,
     maximizable: false, // 禁用最大化功能

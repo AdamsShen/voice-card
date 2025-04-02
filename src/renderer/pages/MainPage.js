@@ -136,7 +136,7 @@ const MainPage = () => {
   return (
     <Container>
       <Header>
-        <Title>小浪声鉴卡</Title>
+        <Title>ONE声音鉴定(独家版权)</Title>
         <LogoutButtonWrapper>
           <LogoutButton />
         </LogoutButtonWrapper>
@@ -158,7 +158,7 @@ const MainPage = () => {
       </Content>
       
       <Footer>
-        © {new Date().getFullYear()} 小浪声鉴卡 - 版本 1.0.0
+        © {new Date().getFullYear()} ONE声音鉴定(独家版权) - 版本 1.0.0
       </Footer>
     </Container>
   );
