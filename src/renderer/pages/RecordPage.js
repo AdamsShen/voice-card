@@ -101,6 +101,40 @@ const NoticeSubText = styled.p`
   margin: 5px 0 0 0;
 `;
 
+// 添加设备选择下拉框样式
+const DeviceSelector = styled.div`
+  width: 100%;
+  margin-bottom: 20px;
+`;
+
+const DeviceSelect = styled.select`
+  width: 100%;
+  padding: 10px;
+  border: 2px solid #AA80AD;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #333;
+  background-color: white;
+  cursor: pointer;
+  
+  &:focus {
+    outline: none;
+    border-color: #F2B705;
+  }
+  
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+`;
+
+const DeviceLabel = styled.label`
+  display: block;
+  margin-bottom: 8px;
+  color: #666;
+  font-size: 14px;
+`;
+
 const CircleButton = styled.button`
   width: 120px;
   height: 120px;
@@ -328,8 +362,11 @@ const RecordPage = () => {
   const [playbackTime, setPlaybackTime] = useState(0);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
-  // 添加性别选择状态
-  const [selectedGender, setSelectedGender] = useState('male'); // 默认选择男性
+  const [selectedGender, setSelectedGender] = useState('male');
+  
+  // 添加设备相关状态
+  const [audioDevices, setAudioDevices] = useState([]);
+  const [selectedDevice, setSelectedDevice] = useState('');
   
   // 添加音量检测相关状态
   const [audioVolume, setAudioVolume] = useState(0);
@@ -429,34 +466,38 @@ const RecordPage = () => {
   // 加载音频设备
   const loadAudioDevices = async () => {
     try {
-      // 获取音频设备列表
       const devices = await navigator.mediaDevices.enumerateDevices();
-      // console.log("可用设备:", devices);
       const audioInputDevices = devices.filter(device => device.kind === 'audioinput');
       
-      // 识别音频设备
+      // 保存所有音频输入设备到状态
+      setAudioDevices(audioInputDevices);
+      
+      // 识别并存储音频设备
       audioInputDevices.forEach(device => {
-        // console.log("音频设备:", device);
-        
-        // 识别并存储立体声混音设备
         if (device.label.toLowerCase().includes('立体声混音') || 
             device.label.toLowerCase().includes('stereo mix') ||
             device.label.toLowerCase().includes('voicemeeter') ||
             device.label.toLowerCase().includes('what u hear')) {
           audioSources.stereomix = device.deviceId;
           console.log("找到立体声混音设备:", device.label);
+          // 默认选择立体声混音设备
+          if (!selectedDevice) {
+            setSelectedDevice(device.deviceId);
+          }
         }
         
-        // 识别并存储麦克风设备
         if (device.label.toLowerCase().includes('麦克风') || 
             device.label.toLowerCase().includes('microphone') ||
             device.label.toLowerCase().includes('mic')) {
           audioSources.microphone = device.deviceId;
           console.log("找到麦克风设备:", device.label);
+          // 如果没有立体声混音设备，默认选择第一个麦克风
+          if (!audioSources.stereomix && !selectedDevice) {
+            setSelectedDevice(device.deviceId);
+          }
         }
       });
       
-      // 如果找到立体声混音，打印日志
       if (audioSources.stereomix) {
         console.log('已找到立体声混音设备，可以录制耳机声音');
       } else {
@@ -465,6 +506,57 @@ const RecordPage = () => {
     } catch (error) {
       console.error('加载音频设备失败:', error);
       setError('无法获取音频设备列表');
+    }
+  };
+  
+  // 修改设备选择处理函数
+  const handleDeviceChange = (event) => {
+    const deviceId = event.target.value;
+    setSelectedDevice(deviceId);
+    console.log('选择音频设备:', deviceId);
+  };
+  
+  // 修改初始化音频流函数
+  const initializeAudioStreams = async () => {
+    try {
+      if (!selectedDevice) {
+        console.log("未选择录音设备");
+        return null;
+      }
+
+      // 根据选择的设备ID获取音频流
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          deviceId: { exact: selectedDevice },
+          // 如果是立体声混音设备，关闭音频处理
+          ...(selectedDevice === audioSources.stereomix ? {
+            echoCancellation: false,
+            noiseSuppression: false,
+            autoGainControl: false
+          } : {
+            echoCancellation: true,
+            noiseSuppression: true,
+            autoGainControl: true
+          })
+        }
+      });
+      
+      console.log("音频流初始化成功");
+      
+      // 创建源节点并连接到增益节点
+      if (audioContext) {
+        const sourceNode = audioContext.createMediaStreamSource(stream);
+        const gainNode = audioContext.createGain();
+        gainNode.gain.value = 1.0;
+        sourceNode.connect(gainNode);
+        gainNode.connect(analyserRef.current);
+        console.log("音频节点创建并连接成功");
+      }
+      
+      return stream;
+    } catch (error) {
+      console.error("初始化音频流失败:", error);
+      return null;
     }
   };
   
@@ -482,37 +574,13 @@ const RecordPage = () => {
       // 创建分析器（用于可视化）
       analyserRef.current = audioContext.createAnalyser();
       analyserRef.current.fftSize = 256;
-      const dataArray = new Uint8Array(analyserRef.current.frequencyBinCount);
-      analyserRef.current.connect(audioDestination); // 连接分析器到目标节点
+      analyserRef.current.connect(audioDestination);
       console.log("分析器节点创建并连接成功");
       
-      // 创建增益节点，用于控制音量
-      stereomixGain = audioContext.createGain();
-      microphoneGain = audioContext.createGain();
-      
-      // 连接增益节点到分析器
-      stereomixGain.connect(analyserRef.current);
-      microphoneGain.connect(analyserRef.current);
-      
-      // 默认设置：立体声混音开，麦克风关
-      stereomixGain.gain.value = 1.0;
-      microphoneGain.gain.value = 0.0;
-      
-      console.log("增益节点创建并连接成功");
-      await loadAudioDevices();
-      // 初始化两个音频流
-      const resultStream = await initializeAudioStreams();
-      
-      // 如果没有获取到任何音频流，提示用户
-      if (!resultStream) {
-        console.error("未能获取到任何音频设备");
-        setError('未能获取到任何音频设备，请检查设备连接和权限');
-        return null;
-      }
-
-      // 如果存在立体声混音设备但获取流失败，提示用户
-      if (audioSources.stereomix && !stereomixStream) {
-        console.log('检测到立体声混音设备，但无法获取流，将只使用麦克风录音');
+      // 初始化选中设备的音频流
+      const stream = await initializeAudioStreams();
+      if (!stream) {
+        throw new Error("无法获取音频设备");
       }
       
       // 返回目标节点的流（用于MediaRecorder）
@@ -520,94 +588,6 @@ const RecordPage = () => {
     } catch (error) {
       console.error("设置音频处理图失败:", error);
       setError('音频处理初始化失败: ' + error.message);
-      return null;
-    }
-  };
-  
-  // 初始化两种音频流
-  const initializeAudioStreams = async () => {
-    try {
-      // 如果找到了立体声混音设备
-      if (audioSources.stereomix) {
-        try {
-          stereomixStream = await navigator.mediaDevices.getUserMedia({
-            audio: {
-              deviceId: { exact: audioSources.stereomix },
-              echoCancellation: false,
-              noiseSuppression: false,
-              autoGainControl: false
-            }
-          });
-          console.log("立体声混音流初始化成功");
-          
-          // 创建源节点并连接到增益节点
-          if (audioContext) {
-            stereomixSource = audioContext.createMediaStreamSource(stereomixStream);
-            stereomixSource.connect(stereomixGain);
-            console.log("立体声混音源节点创建并连接成功");
-          }
-        } catch (stereoError) {
-          // 立体声混音设备获取失败，记录错误但不中断流程
-          console.error("立体声混音设备获取失败:", stereoError);
-          console.log("将只使用麦克风录音");
-          // 确保相关变量为 null
-          stereomixStream = null;
-          stereomixSource = null;
-        }
-      }
-      
-      // 如果找到了麦克风设备
-      if (audioSources.microphone) {
-        try {
-          microphoneStream = await navigator.mediaDevices.getUserMedia({
-            audio: {
-              deviceId: { exact: audioSources.microphone },
-              echoCancellation: true,
-              noiseSuppression: true,
-              autoGainControl: true
-            }
-          });
-          console.log("麦克风流初始化成功");
-          
-          // 创建源节点并连接到增益节点
-          if (audioContext) {
-            microphoneSource = audioContext.createMediaStreamSource(microphoneStream);
-            microphoneSource.connect(microphoneGain);
-            console.log("麦克风源节点创建并连接成功");
-          }
-        } catch (micError) {
-          console.error("麦克风设备获取失败:", micError);
-          microphoneStream = null;
-          microphoneSource = null;
-        }
-      }
-      
-      // 设置音频源优先级：先尝试立体声混音，如果没有则使用麦克风
-      if (stereomixStream) {
-        currentStream = stereomixStream;
-        isUsingStereomix = true;
-        console.log("使用立体声混音作为主音频源");
-      } else if (microphoneStream) {
-        currentStream = microphoneStream;
-        isUsingStereomix = false;
-        // 如果没有立体声混音但有麦克风，将麦克风增益设为1
-        if (microphoneGain) {
-          microphoneGain.gain.value = 1.0;
-          if (stereomixGain) {
-            stereomixGain.gain.value = 0.0;
-          }
-          console.log("麦克风源节点音量设为1（无立体声混音）");
-        }
-        console.log("使用麦克风作为主音频源");
-      } else {
-        // 两者都没有，返回错误
-        throw new Error("无法获取任何音频设备");
-      }
-      
-      return currentStream;
-    } catch (error) {
-      console.error("初始化音频流失败:", error);
-      // 不直接抛出异常，而是返回null，让调用方处理
       return null;
     }
   };
@@ -1247,7 +1227,24 @@ const RecordPage = () => {
             {renderNoticeText()}
           </NoticeBox>
           
-          {/* 性别选择器，始终显示 */}
+          {/* 添加设备选择下拉框 */}
+          <DeviceSelector>
+            <DeviceLabel>选择录音设备：</DeviceLabel>
+            <DeviceSelect 
+              value={selectedDevice}
+              onChange={handleDeviceChange}
+              disabled={isRecording}
+            >
+              <option value="">请选择录音设备</option>
+              {audioDevices.map(device => (
+                <option key={device.deviceId} value={device.deviceId}>
+                  {device.label || `设备 ${device.deviceId}`}
+                </option>
+              ))}
+            </DeviceSelect>
+          </DeviceSelector>
+          
+          {/* 性别选择器 */}
           <GenderSelector>
             <GenderOption 
               selected={selectedGender === 'male'} 
@@ -1278,7 +1275,27 @@ const RecordPage = () => {
           
           {audioUrl && recordingTime >= 5 && (
             <ButtonsContainer>
-              <ReRecordButton onClick={startRecording}>
+              <ReRecordButton onClick={async () => {
+                // 停止播放（如果正在播放）
+                stopPlayback();
+                
+                // 重置所有状态
+                setMessage('');
+                setError('');
+                setAudioUrl(null);
+                setAudioBlob(null);
+                setRecordingTime(0);
+                setPlaybackTime(0);
+                
+                // 清除之前的分析结果缓存
+                sessionStorage.removeItem('analysisResult');
+                sessionStorage.removeItem('analyzedAudioUrl');
+                
+                // 重新加载音频设备列表
+                await loadAudioDevices();
+                
+                console.log('重置录音状态，请选择设备开始新的录音');
+              }}>
                 重新录音
               </ReRecordButton>
               
