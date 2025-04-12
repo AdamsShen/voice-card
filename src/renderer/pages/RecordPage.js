@@ -467,17 +467,21 @@ const RecordPage = () => {
   const loadAudioDevices = async () => {
     try {
       const devices = await navigator.mediaDevices.enumerateDevices();
-      const audioInputDevices = devices.filter(device => device.kind === 'audioinput');
+      // 获取所有音频设备（包括输入和输出设备）
+      const audioDevices = devices.filter(device => 
+        device.kind === 'audioinput' || device.kind === 'audiooutput'
+      );
       
-      // 保存所有音频输入设备到状态
-      setAudioDevices(audioInputDevices);
+      // 保存所有音频设备到状态
+      setAudioDevices(audioDevices);
       
       // 识别并存储音频设备
-      audioInputDevices.forEach(device => {
-        if (device.label.toLowerCase().includes('立体声混音') || 
+      audioDevices.forEach(device => {
+        if (device.kind === 'audioinput' && (
+            device.label.toLowerCase().includes('立体声混音') || 
             device.label.toLowerCase().includes('stereo mix') ||
             device.label.toLowerCase().includes('voicemeeter') ||
-            device.label.toLowerCase().includes('what u hear')) {
+            device.label.toLowerCase().includes('what u hear'))) {
           audioSources.stereomix = device.deviceId;
           console.log("找到立体声混音设备:", device.label);
           // 默认选择立体声混音设备
@@ -486,9 +490,10 @@ const RecordPage = () => {
           }
         }
         
-        if (device.label.toLowerCase().includes('麦克风') || 
+        if (device.kind === 'audioinput' && (
+            device.label.toLowerCase().includes('麦克风') || 
             device.label.toLowerCase().includes('microphone') ||
-            device.label.toLowerCase().includes('mic')) {
+            device.label.toLowerCase().includes('mic'))) {
           audioSources.microphone = device.deviceId;
           console.log("找到麦克风设备:", device.label);
           // 如果没有立体声混音设备，默认选择第一个麦克风
@@ -1236,11 +1241,26 @@ const RecordPage = () => {
               disabled={isRecording}
             >
               <option value="">请选择录音设备</option>
-              {audioDevices.map(device => (
-                <option key={device.deviceId} value={device.deviceId}>
-                  {device.label || `设备 ${device.deviceId}`}
-                </option>
-              ))}
+              <optgroup label="输入设备">
+                {audioDevices
+                  .filter(device => device.kind === 'audioinput')
+                  .map(device => (
+                    <option key={device.deviceId} value={device.deviceId}>
+                      {device.label || `输入设备 ${device.deviceId}`}
+                    </option>
+                  ))
+                }
+              </optgroup>
+              <optgroup label="输出设备">
+                {audioDevices
+                  .filter(device => device.kind === 'audiooutput')
+                  .map(device => (
+                    <option key={device.deviceId} value={device.deviceId}>
+                      {device.label || `输出设备 ${device.deviceId}`}
+                    </option>
+                  ))
+                }
+              </optgroup>
             </DeviceSelect>
           </DeviceSelector>
           
